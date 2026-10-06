@@ -1,25 +1,26 @@
-prog_basics =  int(input())
-math_analysis = int(input())
-discrete_math = int(input())
-creative_solving = int(input())
-history = int(input())
-
-if 0 <= prog_basics <= 100 and 0 <= math_analysis <= 100 and 0 <= discrete_math <= 100 and 0 <= creative_solving <= 100 and 0 <= history <= 100:
-    percent_grade = (prog_basics + math_analysis + discrete_math + creative_solving + history) / 5
-
-    if percent_grade >= 90:
-        letter_grade = 'A'
-    elif percent_grade >= 80:
-        letter_grade = 'B'
-    elif percent_grade >= 75:
-        letter_grade = 'C'
-    elif percent_grade >= 65:
-        letter_grade = 'D'
-    elif percent_grade >= 60:
-        letter_grade = 'E'
+'''Program for calculating grade'''
+i = 0
+percent_grade = 0
+for grade in range(5):
+    grade = int(input())
+    if 0 <= grade <= 100:
+        percent_grade += grade/5
     else:
-        letter_grade = 'F'
-        
-    print(f'Average grade = {percent_grade:.1f} -> {letter_grade}')
-else: 
+        i = 1
+
+if i == 0:
+    if percent_grade >= 90:
+        LETTER_GRADE = 'A'
+    elif percent_grade >= 80:
+        LETTER_GRADE = 'B'
+    elif percent_grade >= 75:
+        LETTER_GRADE = 'C'
+    elif percent_grade >= 65:
+        LETTER_GRADE = 'D'
+    elif percent_grade >= 60:
+        LETTER_GRADE = 'E'
+    else:
+        LETTER_GRADE = 'F'
+    print(f'Average grade = {percent_grade:.1f} -> {LETTER_GRADE}')
+else:
     print('None')

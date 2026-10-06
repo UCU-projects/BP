@@ -1,3 +1,4 @@
+'''One of lab works, diffrent from prevoius by aligning to right'''
 # Filtering basic input errors
 while True :
     n = input()
@@ -10,7 +11,7 @@ while True :
     if 1 <= n <= 26:
         break
     else:
-        continue 
+        continue
 
 # Counting how many iterations needed
 _ = 0
@@ -20,13 +21,13 @@ while _ < n:
     _ += total_row_count
 
 
-# Starting with 65 which is "A" 
+# Starting with 65 which is "A"
 letter_value = 0
 
 for row in range(1, total_row_count+1): # Starting with one to avoid empty line at the start
     if letter_value >= n:
         break
-    
+
     space = (total_row_count - row) * 2 # Two here because each space letter, so twice needed
     print(' ' * space, end='')
 
@@ -43,4 +44,3 @@ for row in range(1, total_row_count+1): # Starting with one to avoid empty line 
         letter_value += 1
 
     print()
-

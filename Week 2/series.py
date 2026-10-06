@@ -1,3 +1,4 @@
+'''Series of sums'''
 n = int(input())
 
 print('1/2', end='')
@@ -9,6 +10,6 @@ for i in range(1, n):
 
     if plus_or_minus > 0:
         print(f' + {next_step_num}/{next_step_den}', end='')
-    else: 
+    else:
         print(f' - {next_step_num}/{next_step_den}', end='')
 print()

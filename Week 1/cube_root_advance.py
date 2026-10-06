@@ -1,4 +1,4 @@
-# Program for calculating all solutions of cubic
+'''Program for calculating all solutions of cubic'''
 from math import cbrt
 
 a = float(input("Enter first coefficient: "))
@@ -9,7 +9,7 @@ d = float(input("Enter fourth coefficient: "))
 # Optimizing formula because of repeated parts(Cardano)
 first_part = -b ** 3 / (27 * a ** 3) + (b * c) / (6 * a ** 2) - d / (2 * a)
 second_part = (c / (3 * a) - b ** 2 / (9 * a ** 2)) ** 3
-second_part_in_formula = (first_part ** 2 + second_part)
+second_part_in_formula = first_part ** 2 + second_part
 
 if second_part_in_formula >= 0:
     second_part_in_formula = second_part_in_formula ** (1/2)

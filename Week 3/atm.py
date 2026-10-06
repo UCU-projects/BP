@@ -1,3 +1,4 @@
+'''Previous year midterm'''
 ans = input()
 
 if ans == 'start':
@@ -16,7 +17,7 @@ if ans == 'start':
     print(f'Банкомат ініціалізовано. Загальна сума: {total} грн')
     print('=== БАНКОМАТ ПРАЦЮЄ ===')
 
-    while total > 0: 
+    while total > 0:
         money = input('Вставте картку (зчитується баланс картки): ')
 
         if money == 'quit':
@@ -38,20 +39,20 @@ if ans == 'start':
 
                 ans = input('Введіть суму для зняття або q: ')
 
-                if total < 0: 
+                if total < 0:
                     break
 
                 if ans == 'q':
                     print('Операцію скасовано. Наступний клієнт.')
                     break
-        
+
                 try:
                     ans = int(ans)
                 except ValueError:
-                    print('Некоректна сума. Введіть додатне ціле число.') 
+                    print('Некоректна сума. Введіть додатне ціле число.')
                     continue
 
-                if ans > money: 
+                if ans > money:
                     print(f'Доступний залишок на картці {money} грн. Введіть відповідну суму.')
                 elif ans > total:
                     print(f'Доступний залишок в банкоматі {total} грн. Введіть відповідну суму.')
@@ -72,7 +73,7 @@ if ans == 'start':
                             break
                         else:
                             print(f'Видано {ans} грн. Залишок на картці: {money} грн.')
-                    
+
         elif money == 0:
             print('На рахунку немає коштів.')
         else:

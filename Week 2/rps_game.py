@@ -1,4 +1,6 @@
-# With if 
+'''Rock paper scissors'''
+
+# With if
 
 for i in range(10):
     game = input()
@@ -26,6 +28,6 @@ for i in range(10):
         case 'SS'| 'RR' | 'PP':
             print('Draw')
         case '':
-            break 
+            break
         case _:
             print(False)

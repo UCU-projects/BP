@@ -1,5 +1,5 @@
-# Program for calculating HDI(Only diffrence is worst index)
-from math import log, cbrt, e
+''' Program for calculating HDI(Only diffrence is worst index) '''
+from math import log, cbrt
 
 # Health
 MIN_EXPECT = 20
@@ -43,6 +43,6 @@ print(f'Education index for {country} is {education_index:.4f}.')
 print(f'GNI index for {country} is {gni_index:.4f}.')
 print(f'HDI for {country} is {hdi_index:.3f}.')
 print(f'HDI for {country} is high: {0.7<=hdi_index}.')
-print(f'The worst index for {country} is {min((health_index, "Life expectancy index"), (education_index, "Education index"), (gni_index, "GNI index"))[1]}.')
-
-
+# print(f'The worst index for {country} is {min((health_index, "Life expectancy index"),
+# (education_index, "Education index"), (gni_index, "GNI index"))[1]}.')
+print(f'The worst index for {country} is {min(gni_index, health_index, education_index) == health_index and 'health index' or min(gni_index, health_index, education_index) == gni_index and 'GNI index' or min(gni_index, health_index, education_index) == education_index and 'education index'}')

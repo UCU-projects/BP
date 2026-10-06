@@ -1,5 +1,9 @@
+'''Tower bloxx the game(khamarochos)'''
+
 score = 15
 height = 0
+# I FUCKING HATE LINTER
+previous_block = ''
 
 while True:
     if score <= 0:
@@ -7,7 +11,7 @@ while True:
         break
 
     block = input()
-    
+
     # Cathing abnormal inputs
     i = 0
     hash_count = 0
@@ -24,28 +28,28 @@ while True:
         previous_block = block
         continue
 
-    correct_placement = True        
+    correct_placement = True
 
     # To avoid cycling through
     if previous_block == block:
         pass
- 
+
     else:
         likeness = 0
 
         now_pos = 0
         for char in block:
-            prev_pos = 0 
+            prev_pos = 0
             for prev_char in previous_block:
                 if now_pos == prev_pos:
                     if char == prev_char:
                         likeness += 1
                     break
                 prev_pos += 1
-                
+
             now_pos +=1
 
-        # If moved one positon then distrupt two 
+        # If moved one positon then distrupt two
         if likeness >= 7:
             score -= 1
         elif likeness >= 5:
@@ -54,7 +58,7 @@ while True:
             correct_placement = False
             score -= 3
 
-    
+
     if correct_placement:
         height += 1
         previous_block = block

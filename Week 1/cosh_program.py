@@ -1,3 +1,4 @@
+'''Program for calculating cosh'''
 from math import cosh, e, exp
 
 x = float(input("Enter x: "))

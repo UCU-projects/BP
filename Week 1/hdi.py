@@ -1,5 +1,5 @@
-# Program for calculating HDI
-from math import log, cbrt, e
+''' Program for calculating HDI '''
+from math import log, cbrt
 
 # Health
 MIN_EXPECT = 20

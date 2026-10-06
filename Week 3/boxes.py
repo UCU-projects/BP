@@ -1,3 +1,4 @@
+'''Loading simulator'''
 load_box = 0
 reweight_box = 0
 wait_box = 0
@@ -11,13 +12,13 @@ while True:
     if box == 'q':
         break
 
-    try: 
+    try:
         box = float(box)
     except ValueError:
         reweight_box += 1
         continue
 
-    if box <= 0: 
+    if box <= 0:
         reweight_box += 1
     elif box_weight + box <= lorry_weight:
         box_weight += box
