@@ -155,6 +155,7 @@ if ans == 'on':
                     print(f'Напій {ans} готовий. {taste_msg}\n {COFFEE_ASCII}')
                 else:
                     denied_counter += 1
+                    denied_counter += 1
                     print('Недостатньо води.')
             else:
                 denied_counter += 1
@@ -336,6 +337,8 @@ if ans == 'on':
             print(f'Вода:{water} мл | Зерна: {beans} г')
 
         elif ans == 'add beans':
+            ans = input('Введіть масу зерен: ')
+
             ans = input('Введіть масу зерен: ')
 
             try:
