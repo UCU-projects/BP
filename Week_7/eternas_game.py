@@ -23,6 +23,20 @@ def vertical_horizontal_check(board: list[list]) -> list[list[tuple[int, int]]]:
     Returns:
         [] | list[list[tuple[int, int]]]]
 
+    >>> board = [[0, 0, 0, 0] for _ in range(16)]
+    >>> vertical_horizontal_check(board)
+    []
+    >>> board = [[0, 0, 0, 0] for _ in range(16)]
+    >>> board[2] = ['g', 'g', 'g', 'g']
+    >>> vertical_horizontal_check(board)
+    [[(0, 2), (1, 2), (2, 2), (3, 2)]]
+    >>> board = [[0, 0, 0, 0] for _ in range(16)]
+    >>> board[15][1] = 'w'
+    >>> board[0][1] = 'w'
+    >>> board[1][1] = 'w'
+    >>> board[2][1] = 'w'
+    >>> vertical_horizontal_check(board)
+    [[(1, 15), (1, 0), (1, 1), (1, 2)]]
     """
 
     combinations = []
@@ -68,35 +82,46 @@ def diagonally_check(board: list[list]) -> list[list[tuple[int, int]]]:
 
     Returns:
         [] | list[list[tuple[int, int]]]]
+
+    >>> board = [[0, 0, 0, 0] for _ in range(16)]
+    >>> diagonally_check(board)
+    []
+    >>> board = [[0, 0, 0, 0] for _ in range(16)]
+    >>> board[0][0] = 'g'
+    >>> board[1][1] = 'g'
+    >>> board[2][2] = 'g'
+    >>> board[3][3] = 'g'
+    >>> diagonally_check(board)
+    [[(0, 0), (1, 1), (2, 2), (3, 3)]]
+    >>> board = [[0, 0, 0, 0] for _ in range(16)]
+    >>> board[15][3] = 'w'
+    >>> board[0][2] = 'w'
+    >>> board[1][1] = 'w'
+    >>> board[2][0] = 'w'
+    >>> diagonally_check(board)
+    [[(3, 15), (2, 0), (1, 1), (0, 2)]]
     """
 
     combinations = []
 
     for start_peg in range(16):
         pegs = [(start_peg + i) % 16 for i in range(4)]
-        item = board[pegs[0]][0]
 
-        if item == 0:
-            continue
+        down_check = board[pegs[0]][0]
+        if down_check != 0:
+            for i in range(4):
+                if board[pegs[i]][i] != down_check:
+                    break
+            else:
+                combinations.append([(i, pegs[i]) for i in range(4)])
 
-        for i in range(4):
-            if item != board[pegs[i]][i]:
-                break
-        else:
-            combinations.append([(i, pegs[i]) for i in range(4)])
-
-    for start_peg in range(16):
-        pegs = [(start_peg + i) % 16 for i in range(4)]
-        item = board[pegs[0]][3]
-
-        if item == 0:
-            continue
-
-        for i in range(4):
-            if item != board[pegs[i]][3 - i]:
-                break
-        else:
-            combinations.append([(3 - i, pegs[i]) for i in range(4)])
+        up_check = board[pegs[0]][3]
+        if up_check != 0:
+            for i in range(4):
+                if board[pegs[i]][3 - i] != up_check:
+                    break
+            else:
+                combinations.append([(3 - i, pegs[i]) for i in range(4)])
 
     return combinations
 
@@ -241,7 +266,7 @@ def save_board(board: list[list], pathname: str):
 
     with open(pathname, 'w+', encoding='utf-8') as file:
         for peg in board:
-            line = [' '.join(str(item) for item in peg)]
+            line = [' '.join([str(item) for item in peg])]
             file.write('\n'.join(line) + '\n')
 
 
