@@ -1,0 +1,18 @@
+Status done
+Setting done
+Translate done
+Debug: movement doesn't corrects itself done
+       exit messages don't show done
+       town disappears after visitng deeper functions done 
+       dungeon deeeper func doesn't work 
+       second choice doesn't work at menu done
+       text appearance 
+Screen cleaning done
+Change inputs done
+Fight system more randomness done
+Quest book 
+How to play done
+Store 
+Make random attack for enemies without lambda done
+QoL:
+       Movement can be done with cyrillic
