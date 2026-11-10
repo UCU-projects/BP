@@ -7,6 +7,11 @@ import random
 import os
 from functools import partial
 
+BOLD = '\033[1m'
+RED = '\033[31m'
+GREEN= '\033[32m'
+NC= '\033[0m'
+
 # === INITITALIZATION LOGIC ===
 
 def create_player() -> dict:
@@ -17,11 +22,12 @@ def create_player() -> dict:
     '''
 
     return {
-        'name': "", 'race': "", 'c_class': "", 'crit_damage': 1, 'lvl': 1, 'exp': 0, 'cap_exp': 100,
-        'hp': 0, 'mp': 0, 'hp_max': 0, 'mp_max': 0, 'defense': 1, 'strength': 0, 'mag_strength': 0,
-        'gold': 0, 'inventory': set(['estus', 'ashen']), 'location': [1, 1], 'entry_direction': '',
-        'spell_book': {}, 'estus': 1, 'ashen': 1, 'main_quest': False, 'boss_item': True,
-        'last_message': ''
+        'name': "", 'race': "", 'c_class': "", 'crit_damage': 1,
+        'lvl': 1, 'exp': 0, 'cap_exp': 100, 'hp': 0, 'mp': 0,
+        'hp_max': 0, 'mp_max': 0, 'defense': 1, 'strength': 0, 'mag_strength': 0,
+        'gold': 0, 'inventory': set(), 'location': [1, 1], 'entry_direction': '',
+        'spell_book': {}, 'estus': 1, 'ashen': 1, 'boss_item': False,
+        'last_message': '', 'class_m': 0
     }
 
 
@@ -38,16 +44,18 @@ def create_enemy(name:str, hp:int, mp:int, defense:int, strength:int,
     :param mag_strength: int, magic strength points of the enemy
     :param spell_book: list, list of spells the enemy can cast
     :param location: tuple, (x, y) coordinates of the enemy on the map
-    :param gold: int, amount of gold the enemy drops upon defeat
-    :param exp: int, amount of experience points the enemy gives upon defeat
 
     :return: dict, A dictionary with all crucial enemy variables
     """
     return {
         'type': 'enemy', 'name': name, 'hp': hp, 'mp': mp, 'hp_max': hp, 'mp_max': mp,
         'defense': defense, 'str': strength, 'mag_str': mag_strength, 'spell_book': spell_book,
-        'location': list(location), 'gold': random.randint(strength+defense, 30), 
-        'exp': random.randint(strength+10+defense, 100)
+        'location': list(location), 
+        'gold': random.randint(round(10+strength+defense+mag_strength),
+                                round(50+strength+mag_strength+defense)),
+        'exp': random.randint(round(strength+10+defense+mag_strength),
+                               round(100+defense+mag_strength+strength)),
+        'last_message': ''
     }
 
 
@@ -62,15 +70,13 @@ def create_boss(name, hp, mp, defense, strength, mag_str, spell_book):
     :param strength: int, strength points of the boss
     :param mag_str: int, magic strength points of the boss
     :param spell_book: list, list of spells the boss can cast
-    :param gold: int, amount of gold the boss drops upon defeat
-    :param exp: int, amount of experience points the boss gives upon defeat
 
     :return: dict, A dictionary with all crucial boss variables
     """
     return {
         'type': 'boss', 'name': name, 'hp': hp, 'mp': mp, 'hp_max': hp, 'mp_max': mp,
         'defense': defense, 'str': strength, 'mag_str': mag_str, 'spell_book': spell_book,
-        'gold': random.randint(100, 200), 'exp': random.randint(100, 150)
+        'gold': random.randint(100, 200), 'exp': random.randint(100, 150), 'last_message': ''
     }
 
 
@@ -151,7 +157,6 @@ def apply_elf(player: dict) -> None:
     player['str'] = 3
     player['mag_str'] = 10
     player['defense'] = 0.6
-    player['spell_book'].update({"ball": 25})
 
 
 def apply_human(player: dict) -> None:
@@ -169,7 +174,6 @@ def apply_human(player: dict) -> None:
     player['str'] = 10
     player['mag_str'] = 5
     player['defense'] = 1
-    player['spell_book'].update({"Fireball": 20})
 
 
 def apply_dwarf(player: dict) -> None:
@@ -187,19 +191,19 @@ def apply_dwarf(player: dict) -> None:
     player['str'] = 12
     player['mag_str'] = 3
     player['defense'] = 1.5
-    player['spell_book'].update({"Fireball": 20})
 
 
 def apply_warrior(player: dict) -> None:
     """
     Applies warrior class traits to the player
 
-    :param player: dict, The player's state containing stats
+    :param player: dict, The player's state containing stats{
 
     :return: None, Updates the player's state with warrior class traits
     """
 
     player['c_class'] = 'Warrior'
+    player['class_m'] = 2
     player['hp'] += 30
     player['hp_max'] = player['hp']
     player['mp'] = 30
@@ -219,13 +223,14 @@ def apply_wizard(player: dict) -> None:
     """
 
     player['c_class'] = 'Wizard'
+    player['class_m'] = 0.5
     player['hp'] -= 10
     player['hp_max'] = player['hp']
     player['mp'] += 30
     player['mp_max'] = player['mp']
     player['str'] -= 2
     player['mag_str'] += 3
-    player['spell_book'].update({"Fireball": 20})
+    player['spell_book'].update({"Вогняна куля": 20})
 
 
 def apply_merchant(player: dict) -> None:
@@ -238,6 +243,7 @@ def apply_merchant(player: dict) -> None:
     """
 
     player['c_class'] = 'Merchant'
+    player['class_m'] = 1
     player['hp_max'] = player['hp']
     player['mp'] += 30
     player['mp_max'] = player['mp']
@@ -259,13 +265,14 @@ def level_up(player: dict) -> None:
         player['lvl'] += 1
         player['exp'] -= player['cap_exp']
         player['cap_exp'] = int(player['cap_exp'] * 1.1)
-        player['hp_max'] += round(10 * player['class_m'])
+        player['hp_max'] += round(5 * player['class_m'])
         player['mp_max'] += round(5 * (1 / player['class_m']))
         player['str'] += round(2 * player['class_m'])
-        player['mag_str'] += round(4 * (1 / player['class_m']))
+        player['mag_str'] += round(1 * (1 / player['class_m']))
         player['hp'] = player['hp_max']
         player['mp'] = player['mp_max']
-        print(f"{player['name']} перейшов на новий курс {player['lvl']}!")
+        player['last_message'] = (f"{player['name']} перейшов "
+            f"на новий курс {player['lvl']}!")
 
 
 # === PLAYER MECHANICS ===
@@ -299,10 +306,16 @@ def player_melee(player: dict, enemy: dict) -> None:
 
     :return: None, Updates the enemy's HP based on the melee attack
     """
+    min_str = 0
+    if 'Залізний меч' in player['inventory']:
+        min_str = 3
 
-    dmg = round(player['str'] / enemy['defense'] * player['crit_damage'])
+    dmg = random.randint(min_str, min_str +
+        round(player['str'] / enemy['defense'] * player['crit_damage']))
     enemy['hp'] -= dmg
-    print(f"Ви атакуєте {enemy['name']} на {dmg} шкоди!")
+    player['last_message'] = f"{GREEN}Ви атакуєте {enemy['name']} на {dmg} шкоди!{NC}"
+    if player['crit_damage'] == 2:
+        player['last_message'] += f'\n{BOLD}{GREEN}КРИТИЧНЕ ПОПАДАННЯ{NC}'
 
 
 def player_magic(player: dict, enemy: dict) -> None:
@@ -316,7 +329,9 @@ def player_magic(player: dict, enemy: dict) -> None:
 
     :return: None, Updates the enemy's HP based on the magic attack
     """
-
+    min_mag_str = 0
+    if 'Cтаровонний посох' in player['inventory']:
+        min_mag_str = 3
     if player['spell_book']:
         spells = list(player['spell_book'].keys())
         how_many_spells = len(player['spell_book'])
@@ -327,30 +342,32 @@ def player_magic(player: dict, enemy: dict) -> None:
         spell_choice = get_input("Виберіть ваше заклинання:")
         spell_mana = 0
 
-        if str(spell_choice) in player['spell_book']:
-            spell_mana = player['spell_book'][spell_choice]
-
-        elif spell_choice.isdigit():
+        if spell_choice.isdigit():
             index = int(spell_choice) - 1
             if 0 <= index < how_many_spells:
                 spell_choice = spells[index]
                 spell_mana = player['spell_book'][spell_choice]
             else:
-                print("Йой, немає такого заклинання.")
+                player['last_message'] = f"{RED}Йой, немає такого заклинання.{NC}"
+                return None
         else:
-            print("Йой, немає такого заклинання.")
+            player['last_message'] = f"{RED}Йой, немає такого заклинання.{NC}"
             return None
 
         if player['mp'] >= spell_mana:
             player['mp'] -= spell_mana
-            dmg = 5 + round(player['mag_str'] * (spell_mana / 10) * player['crit_damage'])
+            dmg = random.randint(min_mag_str, min_mag_str + round(player['mag_str']
+                            * (spell_mana / 10) * player['crit_damage']))
             enemy['hp'] -= dmg
-            print(f"Ви творите {spell_choice} на {enemy['name']} та наносите {dmg} шкоди!")
+            player['last_message'] = (f"{GREEN}Ви творите {spell_choice} на "
+                        f"{enemy['name']} та наносите {dmg} шкоди!{NC}")
+            if player['crit_damage'] == 2:
+                player['last_message'] += f'\n{BOLD}{GREEN}КРИТИЧНЕ ПОПАДАННЯ{NC}'
         else:
-            print(f"Недостатньо мани для {spell_choice}!")
+            player['last_message'] = f"{RED}Недостатньо мани для {spell_choice}!{NC}"
     else:
-        print("Схоже у вас немає книги заклинань, " \
-        "на жаль, таке трапляється, треба зайти в крамничку ")
+        player['last_message'] = f"{RED}Схоже у вас немає книги заклинань, " \
+        f"на жаль, таке трапляється, треба зайти в крамничку{NC}"
 
 
 def player_item(player: dict) -> None:
@@ -364,7 +381,7 @@ def player_item(player: dict) -> None:
 
     if player['estus'] > 0 or player['ashen'] > 0:
         print("Швидкий інвентар: \n")
-        print("1. Фляга з Естусом \n2.Фляга з Попелом \n3. Назад\n")
+        print("1. Фляга з Естусом \n2. Фляга з Попелом \n3. Назад\n")
         item_choice = get_input("Виберіть предмет:")
 
         if item_choice in ('1', 'естус'):
@@ -373,10 +390,10 @@ def player_item(player: dict) -> None:
                 if player['hp'] > player['hp_max']:
                     player['hp'] = player['hp_max']
                 player['estus'] -= 1
-                print(f"Ви використали фляжку з Естусом та відновили 20 здоров'я! "
-                      f"Ви маєте ще {player['estus']} фляг з Естусом.")
+                player['last_message'] = (f"{GREEN}Ви використали фляжку з Естусом "
+                f"та відновили 20 здоров'я! Ви маєте ще {player['estus']} фляг з Естусом.{NC}")
             else:
-                print("На жаль, у вас закінчились фляги з Естусом")
+                player['last_message'] = f"{GREEN}На жаль, у вас закінчились фляги з Естусом{NC}"
 
         elif item_choice in ('2', 'попіл'):
             if player['ashen'] > 0:
@@ -384,19 +401,19 @@ def player_item(player: dict) -> None:
                 if player['mp'] > player['mp_max']:
                     player['mp'] = player['mp_max']
                 player['ashen'] -= 1
-                print(f"Ви використали фляжку з Попелом та відновили 20 мани "
-                      f"Ви маєте ще {player['ashen']} фляг з Попелом.")
+                player['last_message'] = (f"{GREEN}Ви використали фляжку з Попелом "
+                f"та відновили 20 мани! Ви маєте ще {player['ashen']} фляг з Попелом.{NC}")
             else:
-                print("На жаль, у вас закінчились фляги з Попелом")
+                player['last_message'] = f"{RED}На жаль, у вас закінчились фляги з Попелом{NC}"
 
         elif item_choice in ('3', 'back'):
             pass
 
         else:
-            print("Щось я вас не зрозумів.")
+            player['last_message'] = "Щось я вас не зрозумів. Що ви хотіли дістати?"
 
     else:
-        print("Ваші кишені пусті")
+        player['last_message'] = f"{RED}Ваші кишені пусті{NC}"
 
 
 def move_player(player: dict, direction: str, game_map: dict) -> list:
@@ -413,24 +430,23 @@ def move_player(player: dict, direction: str, game_map: dict) -> list:
 
     x, y = player['location']
 
-    if direction == 'w':
+    if direction in ('w', 'ц'):
         y -= 1
-    elif direction == 'a':
+    elif direction in ('a', 'ф'):
         x -= 1
-    elif direction == 's':
+    elif direction in ('s', 'і'):
         y += 1
-    elif direction == 'd':
+    elif direction in ('d', 'в'):
         x += 1
     else:
         return player['location']
 
     if x < 0 or x >= game_map['width'] or y < 0 or y >= game_map['height']:
-        print("Там живуть дракони, не ходіть туди")
         return player['location']
 
     game_map['map'][player['location'][1]][player['location'][0]] = '.'
     player['location'] = [x, y]
-    game_map['map'][y][x] = 'P'
+    game_map['map'][y][x] = f'{GREEN}P{NC}'
 
     return player['location']
 
@@ -453,17 +469,17 @@ def move_player_back(player: dict, direction: str, game_map: dict, restore_char:
     x, y = player['location']
     game_map['map'][y][x] = restore_char
 
-    if direction == 'w':
+    if direction in ('w', 'ц'):
         y += 1
-    elif direction == 'a':
+    elif direction in ('a', 'ф'):
         x += 1
-    elif direction == 's':
+    elif direction in ('s', 'і'):
         y -= 1
-    elif direction == 'd':
+    elif direction in ('d', 'в'):
         x -= 1
 
     player['location'] = [x, y]
-    game_map['map'][y][x] = 'P'
+    game_map['map'][y][x] = f'{GREEN}P{NC}'
 
     return player['location']
 
@@ -482,11 +498,12 @@ def player_escape(player: dict, enemy: dict, move_dir: str, game_map: dict) -> b
     :return: bool, True if the player successfully escapes, False otherwise
     """
 
-    print("Ви пробуєте втекти...")
+    print('Ви пробуєте втекти')
+    get_input('Нажміть Enter, щоб спробувати втекти...')
     escape_chance = random.randint(1, 100) + player['lvl'] - (enemy['hp'] / 4)
 
     if escape_chance >= 70:
-        print("Ви успішно втекли!")
+        player['last_message'] = f"{GREEN}Ви успішно втекли!{NC}"
 
         enemy['hp'] = enemy['hp_max']
         enemy['mp'] = enemy['mp_max']
@@ -494,12 +511,13 @@ def player_escape(player: dict, enemy: dict, move_dir: str, game_map: dict) -> b
         if enemy.get('type') == 'boss':
             move_player_back(player, move_dir, game_map, restore_char='D')
         else:
-            move_player_back(player, move_dir, game_map, restore_char='E')
+            move_player_back(player, move_dir, game_map, restore_char=f'{RED}E{NC}')
 
         return True
 
     if escape_chance >= 50 :
-        print("Ви чудом втекли, але поранились під час втечі")
+        player['last_message'] = (f"{GREEN}Ви чудом втекли, "
+        f"але поранились під час втечі{NC}")
 
         player['hp'] -= 10
         enemy['hp'] = enemy['hp_max']
@@ -507,12 +525,11 @@ def player_escape(player: dict, enemy: dict, move_dir: str, game_map: dict) -> b
 
         if enemy.get('type') == 'boss':
             move_player_back(player, move_dir, game_map, restore_char='D')
-            enemy['trigger'] = False
         else:
-            move_player_back(player, move_dir, game_map, restore_char='E')
+            move_player_back(player, move_dir, game_map, restore_char=f'{RED}E{NC}')
         return True
 
-    print("You failed to escape and the battle continues!")
+    player['last_message'] = f"{RED}Ви не змогли втекти і битва продовжується!{NC}"
     return False
 
 
@@ -532,7 +549,7 @@ def enemy_attack(enemy: dict, player: dict) -> None:
 
     dmg = round(enemy['str'] / player['defense'])
     player['hp'] -= dmg
-    print(f"{enemy['name']} атакував вас на {dmg} шкоди!")
+    enemy['last_message'] = f"{RED}{enemy['name']} атакував вас на {dmg} шкоди!{NC}"
 
 
 def enemy_heal(enemy:dict, player:dict, need_mana:bool=False) -> None:
@@ -546,13 +563,14 @@ def enemy_heal(enemy:dict, player:dict, need_mana:bool=False) -> None:
     """
 
     if need_mana:
-        enemy['mp'] += round(enemy['mp_max'] / 5)
-        print(f"{enemy['name']} відновив {enemy['mp_max']/5} мани!")
-
+        healed = round(enemy['mp_max'] / 5)
+        enemy['mp'] += healed
+        enemy['last_message'] = f"{RED}{enemy['name']} відновив {healed} мани!{NC}"
 
     elif enemy['hp'] <= enemy['hp_max'] / 2 or enemy['hp'] <= enemy['hp_max'] - 50:
-        enemy['hp'] += round(enemy['hp_max'] / 10)
-        print(f"{enemy['name']} відновив {enemy['hp_max']/10} здоров'я!")
+        healed = round(enemy['hp_max'] / 10)
+        enemy['hp'] += healed
+        enemy['last_message'] = f"{RED}{enemy['name']} відновив {healed} здоров'я!{NC}"
 
     else:
         enemy_attack(enemy, player)
@@ -578,7 +596,8 @@ def enemy_magic(enemy:dict, player:dict) -> None:
             enemy['mp'] -= spell_mana
             dmg = 5 + round(enemy['mag_str'] * (spell_mana / 10))
             player['hp'] -= dmg
-            print(f"{enemy['name']} використав {spell_choice} на вас та наніс {dmg} шкоди!")
+            enemy['last_message'] = (f"{RED}{enemy['name']} використав {spell_choice} "
+                                     f"на вас та наніс {dmg} шкоди!{NC}")
 
         else:
             enemy_heal(enemy, player, need_mana=True)
@@ -600,7 +619,8 @@ def town_menu(state: dict, entry_direction:str=None) -> None:
     :return: None, Updates the game state based on the player's choices in the town
     """
 
-    print("Вітаю на кампусі! Щоб ви воліли б зробити?")
+    print("Вітаю на кампусі! Стоп, схоже ви найшли УКУ в цьому таємничому вимірі!\n"
+          "Щоб ви воліли б зробити?")
 
     while True:
         print(f"{state['player']['name']} на {state['player']['lvl']} курсі\n"
@@ -608,7 +628,7 @@ def town_menu(state: dict, entry_direction:str=None) -> None:
             f"Мана: {state['player']['mp']}/{state['player']['mp_max']}\n"
             f"Гривень: {state['player']['gold']}")
         print('-' * 30)
-        print("1. Піти у корчму\n2. Піти у крамнику\n3. Залишити територію кампусу\n")
+        print("1. Піти у корчму\n2. Піти у крамницю\n3. Залишити територію кампусу\n")
         choice = get_input("Ваш вибір:")
 
         if choice in ('1', 'корчма'):
@@ -653,16 +673,16 @@ def town_inn(state:dict) -> None:
         if choice in ('1', 'вийняти', 'кімната'):
             if state['player']['gold'] >= 20:
                 state['player']['gold'] -= 20
-                print("Ви орендуєте кімнату за 20 гривень " \
-                "та дуже добре відпочиваєте, прокидаєтесь ви дуже виспані та щасливі")
+                print(f"{RED}Ви орендуєте кімнату за 20 гривень " \
+                f"та дуже добре відпочиваєте,\nпрокидаєтесь ви дуже виспані та щасливі\n{NC}")
                 state['player']['hp'] = state['player']['hp_max']
                 state['player']['mp'] = state['player']['mp_max']
-                print("Ваше здоров'я та мана повністю відновилась!")
+                print("Ваше здоров'я та мана повністю відновилась!\n")
 
             else:
-                print("Ви занадто бідні, " \
-                "щоб дозволити собі комфортний відпочинок, " \
-                "тож ви повертаєтесь до головної зали")
+                print(f"{RED}Ви занадто бідні, " \
+                "щоб дозволити собі комфортний відпочинок,\n" \
+                f"тож ви повертаєтесь до головної зали\n{NC}")
 
             town_inn(state)
 
@@ -688,43 +708,52 @@ def town_talk_bartender(state: dict) -> None:
     :return: None, Updates the game state based on the player's conversation with the bartender
     """
 
-    print('"Вітаю вас у корчмі!\nЧи я можу запропонувати Вам щось випити? Пиво, ель?"')
+    print('\n"Вітаю вас у корчмі!Чи я можу запропонувати Вам щось випити? Пиво, ель?"')
 
     while True:
-        print('1. Пиво\n2. Ель\n3. Спитати про роботу\n4. "Нічого, дякую"')
+        print('1. Пиво\n2. Ель\n3. Спитати про місцину\n4. "Нічого, дякую"')
 
         choice = get_input("Ваш вибір:")
 
-        # Make buffs
+        if choice in ('1', 'пиво'):
+            if state['player']['mp'] - state['player']['mp_max'] < 50:
+                state['player']['mp'] += 10
+                print(f"{GREEN}Господар корчми приносить вам холоднезне пиво.\n" \
+                f"Ви робите ковточок та почуваєтесь краще.{NC}\n")
+            else:
+                print(f'{RED}Вам стає погано, схоже ви перепили\n' \
+                f'Не варто було зловживати безкоштовною випивкою{NC}')
+                state['player']['mp'] = state['player']['mp_max'] // 5
 
-        if choice in ('1', 'beer'):
-            state['player']['mp'] += 10
-            print("Господар корчми приносить вам холоднезне пиво. " \
-            "Ви робите ковточок та почуваєтесь краще.")
-            break
+        elif choice in ('2', 'ель'):
+            if state['player']['hp'] - state['player']['hp_max'] < 50:
+                state['player']['hp'] += 10
+                print(f"{GREEN}Господар корчми приносить вам міцний ель.\n" \
+                f"Ви опорожнюєте пінту та відчуваєте як тепло розходиться по тілу.{NC}\n")
+            else:
+                print(f'{GREEN}Вам стає погано, схоже ви перепили\n' \
+                f'Не варто було зловживати безкоштовною випивкою{NC}')
+                state['player']['hp'] = state['player']['hp_max'] // 5
 
-        if choice in ('2', 'ale'):
-            state['player']['hp'] += 10
-            print("Господар корчми приносить вам міцний ель. " \
-            "Ви опорожнюєте пінту та відчуваєте як тепло розходиться по тілу.")
-            break
+        elif choice in ('3', 'місцина'):
+            print('Хазяїн корчми розказує вам про страшенне підземелля\n'
+            'з якого час від часу доносяться жахливі завивання.\n'
+            '"ЧООООООМУ ВОНО НЕ ПРАЦЮЄ, ЗА ЩОООООООО" найбільш пристойне серед них\n'
+            'Він говорить, що всередині підземелля, живе страшний монстр,\n' 
+            'який час-від-час телепортує до цього виміру різні речі, що робить клопіт місцевим.\n\n'
+            'Його слова наштовхують на можливе рішення вашої проблеми.\n'
+            f'{BOLD}Ймовірно, якщо вбити чудовисько, то УКУ вернеться у ваш вимір.{NC}\n')
 
-        if choice in ('3', 'ask', 'job'):
-            print('Хазяїн корчми розказує вам про страшенне підземелля ' \
-            'з якого час від часу доносяться жахливі завивання.' \
-            '"ЧООООООМУ ВОНО НЕ ПРАЦЮЄ, ЗА ЩОООООООО" найбільш пристойне серед них' \
-            'Він говорить що містечко вам дуже віддячить, якщо ви розбиретесь з тією проблемкою')
-            break
-
-        if choice in ('4', 'nothing', 'thanks'):
+        elif choice in ('4', 'нічого', 'дякую'):
             print("Володар заклажу киває та продовжує " \
             "протирати стару-задрипану поверхню барної стійки.")
             break
-
-        print('"Скажіть голосніше, а то я з часом почав недочувати" говорить дідуган за стійкою')
+        else:
+            print('"Скажіть голосніше, а то я з часом почав недочувати"' \
+            ' говорить дідуган за стійкою')
 
     print('"Повертайтесь, якщо знадобляться ' \
-    'припаси чи потребуватимете відпочинку" говорить він вам у спину.')
+    'припаси чи потребуватимете відпочинку"\nговорить він вам у спину.')
     get_input('Нажміть Enter, щоб вийти')
 
 
@@ -739,20 +768,27 @@ def shop_menu(state:dict, ask_continue:bool=False) -> None:
     """
 
     if ask_continue:
-        answer = get_input("Ви що хочете далі скуплятись? (т/н): ")
-        if answer not in ('т', 'так'):
-            return shop_menu(state, False)
+        while True:
+            answer = get_input("Ви хочете далі скуплятись?\n1. Так\n2. Ні")
+            if answer in ('1'):
+                return shop_menu(state, False)
+            if answer in ('2'):
+                break
+
 
     shop_catalog = {
-        "1": {"name": "Фляга з Естусом", "price": 15, "kind": "estus"},
-        "2": {"name": "Фляга з Попелом", "price": 15, "kind": "ashen"},
+        "1": {"name": "Фляга з Естусом", "price": 15,},
+        "2": {"name": "Фляга з Попелом", "price": 15},
+        '3': {"name": "Залізний меч", "price": 30},
+        '4': {"name": "Cтаровинний посох", "price": 30},
+        '5': {'name': 'Заклинання: Блискавки', 'price': 50}
     }
 
     if not ask_continue:
         print('''Вітаю вас у крамниці "Співаюче ковадло"! Що ви хочете зробити?''')
 
         while True:
-            print("1. Купити предемети\n2. Продати предмети\n3. Повернутись в містечко")
+            print("1. Купити прeдмети\n2. Продати предмети\n3. Повернутись в містечко")
             choice = get_input("Ваш вибір:")
             if choice in  ('1', 'купити'):
                 shop_buy_sell(state, shop_catalog, buying=True)
@@ -766,7 +802,7 @@ def shop_menu(state:dict, ask_continue:bool=False) -> None:
                 break
 
             print('Сивий дворф у розквіті сил глянув на вас ' \
-            'ніби ви щось сказали, але зразу повернувся до ковання виробів')
+            'ніби ви щось сказали,\nале зразу повернувся до ковання виробів')
 
 
 def shop_buy_sell(state:dict, catalog:dict, buying:bool) -> None:
@@ -780,45 +816,67 @@ def shop_buy_sell(state:dict, catalog:dict, buying:bool) -> None:
     """
     while True:
         for key, item in catalog.items():
-            print(f"{key}. {item['name']} - {item['price']} gold")
-        choice = get_input("Your choice: ")
-        # Rewrite this nightmare
-        if choice in catalog:
+            if not buying and item['name'] in ('Заклинання: Блискавки'):
+                continue
+            num = int(key)
+            print(f"{key}. {item['name']} - {item['price']} гривень")
+        print(f'{num+1}. Вийти')
+        choice = get_input("Ваш вибір:")
+
+        if buying:
+            pass
+        else:
+            catalog.popitem()
+
+        if choice in catalog and choice != f'{num+1}':
+            print()
             item = catalog[choice]
             if buying:
                 if state['player']['gold'] >= item["price"]:
                     state['player']['gold'] -= item["price"]
-                    if item["kind"] == "estus":
+                    if item["name"] == "Фляга з Естусом":
                         state['player']['estus'] += 1
-                        if state['player']['estus'] == 1:
-                            state['player']['inventory'].add('estus')
-                    elif item["kind"] == "ashen":
+                    elif item["name"] == "Фляга з Попелом":
                         state['player']['ashen'] += 1
-                        if state['player']['ashen'] == 1:
-                            state['player']['inventory'].add('ashen')
-                    print(f"You bought {item['name']}!")
+                    elif item['name'] == 'Залізний меч':
+                        state['player']['inventory'].add('Залізний меч')
+                    elif item['name'] == 'Старовинний посох':
+                        state['player']['inventory'].add('Старовинний посох')
+                    elif item['name'] == 'Заклинання: Блискавки':
+                        state['player']['spell_book'].update({'Блискавка': 100})
+                        print('Ви вивчили нове заклинання тепер воно у вашій книжці')
+                        print('Цей предмет ви не можете продати')
+                    print(f"{GREEN}Ви купили {item['name']}!\n{NC}")
                 else:
-                    print("Not enough gold.")
+                    print(f"{RED}Недостатньо грошей, щоб купити {item['name']}.\n")
                 shop_menu(state, ask_continue=True)
             else:
-                if item["kind"] == "estus" and state['player']['estus'] > 0:
-                    state['player']['gold'] += item["price"]
+                if item["name"] == "Фляга з Естусом" and state['player']['estus'] > 0:
+                    state['player']['gold'] += item["price"]//2
                     state['player']['estus'] -= 1
-                    if state['player']['estus'] == 0:
-                        state['player']['inventory'].remove('estus')
-                    print(f"You sold {item['name']}!")
-                elif item["kind"] == "ashen" and state['player']['ashen'] > 0:
-                    state['player']['gold'] += item["price"]
+                    print(f"{GREEN}Ви продали {item['name']}!\n{NC}")
+                elif item["name"] == "Фляга з Попелом" and state['player']['ashen'] > 0:
+                    state['player']['gold'] += item["price"]//2
                     state['player']['ashen'] -= 1
-                    if state['player']['ashen'] == 0:
-                        state['player']['inventory'].remove('ashen')
-                    print(f"You sold {item['name']}!")
+                    print(f"{GREEN}Ви продали {item['name']}!\n{NC}")
+                elif (item['name'] == 'Старовинний посох'
+                and 'Старовинний посох' in state['player']['inventory']):
+                    state['player']['gold'] += item["price"]//2
+                    state['player']['inventory'].remove('Старовинний посох')
+                    print(f"{GREEN}Ви продали {item['name']}!{NC}\n")
+                elif (item['name'] == 'Залізний меч'
+                and 'Залізний меч' in state['player']['inventory']):
+                    state['player']['gold'] += item["price"]//2
+                    state['player']['inventory'].remove('Залізний меч')
+                    print(f"{RED}Ви продали {item['name']}!{NC}")
                 else:
-                    print("You don't have that item to sell.")
-                shop_menu(state, ask_continue=False)
+                    print(f"{RED}Ви не маєте {item['name']}, щоб продати.{NC}\n")
+                shop_menu(state, ask_continue=True)
             break
-
-        print("Invalid choice. Please try again.")
+        if choice == f'{num+1}':
+            break
+        print('"Час - гроші, не марнуйте його, вибирайте, або забирайтесь звідси"\n' \
+        'Говорить вам дворф за прилавком\n')
 
 
 # === DUNGEON LOGIC ===
@@ -834,23 +892,30 @@ def dungeon_menu(state:dict, entry_direction:str=None) -> None:
     :return: None, Updates the game state based on the player's actions in the dungeon
     """
 
-    print("ІТ Спейс")
+    print("Це підземелля, ні, це ІТ-спейс, схоже УКУ не лише перекинуло у цей вимір,\n" \
+    "але ще й розкидало по ньому")
     while True:
-        print("1. Повернутись назад на карту\n2. Йти далі")
+        print("1. Повернутись назад\n2. Йти далі")
         choice = get_input("Ваш вибір:")
         if choice in ('1', 'назад', 'карта'):
             state['player']['last_message'] = ("Ви покидаєте підземелля, "
-            "у спину вам доносяться жахливі звуки, " \
-            "ви, налякано, з усіх сил втікаєте на білий світ, " \
-            "але падаєте через круглого цилідричного монстра, " \
-            "лише продовжуючи повзти, ви втікли з цього жахливого місця. ")
+            "у спину вам доносяться жахливі звуки,\n" \
+            "ви налякано, з усіх сил втікаєте на білий світ, " \
+            "але падаєте через цилідричного\nмонстра, " \
+            "лише продовжуючи повзти, ви змогли втікти з цього жахливого місця.")
             move_player_back(state['player'], entry_direction, state['game_map'], restore_char='D')
             break
 
         if choice in ('2', 'далі'):
             if not state['player']['boss_item']:
                 battle(state, state['dungeon']['boss'], entry_direction)
-                sys.exit(0)
+                if state['player']['boss_item']:
+                    sys.exit(f'Як тільки стихає {state['boss']['name']} і з вуст цієї істоти '
+                             'більше не чутно навіть подиху,\nоточення навколо вас міняється. '
+                             'Вийшовши з підземелля, ви бачите знайому місцину навколо,\n' 
+                             'Стрийський парк, Податкову, Львів... Cхоже ви змогли.\n\n'
+                             'Ви повернули УКУ на його законне місце у нашому світі. ВІТАЮ!!!')
+            break
 
         print("Напевно через стукіт ваших зубів, я вас не зрозумів, давайте спробуємо ще раз")
 
@@ -890,7 +955,7 @@ def place_enemies(game_map:dict, enemies:list) -> None:
 
     for enemy in enemies:
         enemy['location'] = list(get_random_empty_location(game_map))
-        game_map['map'][enemy['location'][1]][enemy['location'][0]] = 'E'
+        game_map['map'][enemy['location'][1]][enemy['location'][0]] = f'{RED}E{NC}'
 
 
 def display_map(game_map:dict) -> None:
@@ -938,18 +1003,23 @@ def battle(state: dict, enemy: dict, direction: str, need_mana: bool = False) ->
 
     player = state['player']
     enemy['hp_max'] = enemy['hp']
+    enemy['mp_max'] = enemy['mp']
 
-    print(f"Ви натрапили на {enemy.get('name', 'Enemy')}!\nБитва починається!\n")
-
-    if 'mp' in enemy:
-        enemy['mp_max'] = enemy['mp']
+    print(f"{BOLD}Ви натрапили на {enemy.get('name', 'Ворог')}!\nБитва починається!\n{NC}")
 
     while player['hp'] > 0 and enemy['hp'] > 0:
-        print(f"{player['name']} HP: {player['hp']}/{player['hp_max']} |"
-            f"MP: {player['mp']}/{player['mp_max']}")
+        print(f"{player['name']} Здоров'я: {player['hp']}/{player['hp_max']} | "
+            f"Mана: {player['mp']}/{player['mp_max']}")
+        print(f"{enemy.get('name', 'Ворог')} Здоров'я: {enemy['hp']}/{enemy['hp_max']}\n")
 
-        print(f"{enemy.get('name', 'Enemy')} HP: {enemy['hp']}/{enemy['hp_max']}\n")
-        print("Дія:\n1. Атака\n2. Магіяc\n3. Предмети\n4. Втеча\n")
+        if player['last_message']:
+            print(f'{player['last_message']}')
+        if enemy['last_message']:
+            print(f'{enemy['last_message']}\n')
+        print("Дія:\n1. Атака\n2. Магія\n3. Предмети\n4. Втеча\n")
+
+        player['last_message'] = ''
+        enemy['last_message'] = ''
 
         action = get_input("Виберіть дію:")
         dice = random.randint(1, 20)
@@ -957,8 +1027,8 @@ def battle(state: dict, enemy: dict, direction: str, need_mana: bool = False) ->
             player['crit_damage'] = 2
 
         if dice == 1:
-            print('ОЙ-ОЙ-ОЙ, ви заплутались в своїх ногах і впали')
-            player['hp'] -= 5
+            player['last_message'] = f'{RED}ОЙ-ОЙ-ОЙ, ви заплутались в своїх ногах і впали{NC}'
+            player['hp'] -= 10
         else:
             if action in ('1', 'атака'):
                 player_melee(player, enemy)
@@ -973,11 +1043,11 @@ def battle(state: dict, enemy: dict, direction: str, need_mana: bool = False) ->
                 if player_escape(player, enemy, direction, state['game_map']):
                     break
             else:
-                print("Не варто зараз гаяти час. А то час згаїть вас, обирайте дію")
-                continue
+                player['last_message'] = (f"{RED}Не варто зараз гаяти час. "
+                f"А то час згаїть вас, обирайте дію{NC}")
 
         player['crit_damage'] = 1
-
+        print()
         if enemy['hp'] > 0:
             # Use functools.partial to prefill func
             # Without it, will get TypeError: NoneType object is not callable
@@ -989,18 +1059,23 @@ def battle(state: dict, enemy: dict, direction: str, need_mana: bool = False) ->
 
             random.choice(enemy_actions)()
 
+        clear_screen()
+
     if player['hp'] <= 0:
-        sys.exit('Ви програли!')
+        sys.exit(f"{RED}Вас переміг {enemy['name']}.\n"
+                 f"На жаль, УКУ назавжди стало частиною Арілонгу, як і ви{NC}")
 
     elif enemy['hp'] <= 0:
-        state['player']['last_message'] = (f"Ви перемогли {enemy.get('name', 'Enemy')}! "
-        f"Ви отримали {enemy.get('exp', 0)} очків досвіду та {enemy.get('gold', 0)} гривень.")
+        print(f"{GREEN}Ви перемогли {enemy.get('name', 'Enemy')}! "
+        f"Ви отримали {enemy.get('exp', 0)} очків досвіду та {enemy.get('gold', 0)} гривень.{NC}")
 
+        player['last_message']= ''
         player['exp'] += enemy.get('exp', 0)
         player['gold'] += enemy.get('gold', 0)
 
         if enemy in state['enemies']:
             state['enemies'].remove(enemy)
+            get_input('Нажміть Enter, щоб продовжити')
         if enemy == state['boss']:
             player['boss_item'] = True
 
@@ -1040,6 +1115,7 @@ def start_new_game(state:dict) -> dict:
 
     while not player['name']:
         player['name'] = get_input("Ви пробуєте пригадати своє ім'я...")
+        print("Гей, назовіться, не гоже бути без імені")
 
     clear_screen()
 
@@ -1083,7 +1159,7 @@ def main_menu(state:dict) -> dict:
         if hasattr(sys.stdout, 'reconfigure'):
             sys.stdout.reconfigure(encoding='utf-8')
 
-    print("""\nЦе текстова рольова гра, де ваше завдання полягає у порятунку
+    print(f"""\nЦе текстова рольова гра, де ваше завдання полягає у порятунку
 кампусу УКУ від виміру Арілонг.\n\nДля переміщення по глобальній карті використовуйте клавіші W
 для руху вгору, A для руху вліво, S для руху вниз та D для руху вправо, 
 після чого натискайте Enter.\n
@@ -1093,16 +1169,20 @@ def main_menu(state:dict) -> dict:
 Щоб робити вибір у діалогах чи меню, вводьте відповідну цифру варіанту. 
 Для виходу з гри у будь-який момент введіть q або quit. \n
 У корчмі можна орендувати кімнату за 20 гривень для повного відновлення здоров'я та
-мани, або ж купити пиво чи ель, які дають невеликі бонуси до характеристик. 
+мани, або ж випити пиво чи ель, які дають невеликі бонуси до характеристик. 
 У крамниці можна купувати та продавати фляги з Естусом і Попелом, 
-що відновлюють здоров'я та ману відповідно, по 15 гривень за штуку.\n
+що відновлюють здоров'я та ману відповідно, по 15 гривень за штуку.
+Також в крамниці можна купити посилення для битви.\n
 Перед походом у підземелля до фінального боса рекомендується добре
-прокачати персонажа та запастися цілющими флягами.""")
+прокачати персонажа та запастися цілющими флягами.\n
+{BOLD}Повбивайте ворогів, купіть спорядження та переможіть монстра підземелля\n
+Приємної гри{NC}
+""")
 
     get_input('Нажміть Enter, щоб перейти до гри.')
 
     clear_screen()
-    
+
     print('\nХолодний листопадовий вечір, ви тільки-тільки повернулись з навчання додому.\n\n' \
     "Зробивши собі улюблений теплий напій, ви сідаєте за\nкомп'ютер " \
     "і бачите на уківській пошті лист.\n\n"
@@ -1110,15 +1190,15 @@ def main_menu(state:dict) -> dict:
 
     get_input('Нажміть Enter, щоб прочитати лист')
 
-    message = """\n**УКРАЇНСЬКИЙ КАТОЛИЦЬКИЙ УНІВЕРСИТЕТ**
-    *Екстрений штаб із питань просторово-часових аномалій та релокації*
+    message = f"""\n{BOLD}УКРАЇНСЬКИЙ КАТОЛИЦЬКИЙ УНІВЕРСИТЕТ
+    Екстрений штаб із питань просторово-часових аномалій та релокації{NC}
 
     
-    **Вих. №:** 01-43/Б
-    **Тема:** Оновлені дані щодо рятувальної місії та офіційний запит 
+    {BOLD}Вих. №:{NC} 01-43/Б
+    {BOLD}Тема:{NC} Оновлені дані щодо рятувальної місії та офіційний запит
     на Вашу участь
 
-    **Шановний/а кандидате!**
+    {BOLD}Шановний/а кандидате!{NC}
 
     Цим листом офіційно повідомляємо Вас про те, що внаслідок 
     непередбачуваної технічної ситуації під час проведення експерименту 
@@ -1155,8 +1235,8 @@ def main_menu(state:dict) -> dict:
 
     З повагою,
 
-    **Оперативний штаб порятунку кампусу**
-    *Адміністрація Українського католицького університету (в екзилі)*"""
+    {BOLD}Оперативний штаб порятунку кампусу
+    Адміністрація Українського католицького університету (в екзилі){NC}"""
 
     print(message)
 
@@ -1167,12 +1247,12 @@ def main_menu(state:dict) -> dict:
         if choice in ['1', 'почати']:
             return start_new_game(state)
         if choice in ['2']:
-            sys.exit('Буквально за декілька хвилин вам приходить відповідь:\n'
+            sys.exit(f'\n{RED}Буквально за декілька хвилин вам приходить відповідь:\n'
                      '"Нам дуже прикро, що Ви вирішили не погоджуватись".\n' \
                      'Проте вам все рівно, бо ви впевнені, що вони найдуть когось іншого.\n\n' \
                      'Пройшов тиждень, місяць, рік, але на місці Козельницької 2\n'
                      'все ще знаходиться велетенський котлован.\n\n' \
-                     'З часом ця вирва стала одним із багатьох туристичних місць Львова\n'
+                     f'З часом ця вирва стала одним із багатьох туристичних місць Львова{NC}\n'
                      'Напевно вона тут назавжди, цікаво чи змінились б історія,\n' \
                      'якщо б ви погодились того холодного листопадового вечора?')
 
@@ -1191,6 +1271,7 @@ def run_game_loop(state:dict) -> dict:
     game_map = state['game_map']
     player = state['player']
     wrong_move = False
+    direction = ''
 
     tx, ty = game_map['town_location']
     game_map['map'][ty][tx] = 'T'
@@ -1199,13 +1280,18 @@ def run_game_loop(state:dict) -> dict:
     game_map['map'][dy][dx] = 'D'
 
     px, py = player['location']
-    game_map['map'][py][px] = 'P'
+    game_map['map'][py][px] = f'{GREEN}P{NC}'
 
 
     place_enemies(game_map, state['enemies'])
 
-    print('')
-    while not player['main_quest']:
+
+    print('"Напевно Вам вартувало б, сходити в місто, в корчму, '
+    'відпочити та дізнатись більше\nпро цей світ" говорить вам старий чоловяга, що проходив мимо')
+
+    get_input('Натисніть Enter, щоб зрозуміти, що він говорить')
+
+    while True:
         clear_screen()
 
         print(f"{player['name']} на {player['lvl']} курсі\n"
@@ -1222,7 +1308,10 @@ def run_game_loop(state:dict) -> dict:
         level_up(player)
 
         if wrong_move:
-            print('Ну то не серйозно, напишіть правильний напрямок')
+            if direction in ('w', 'ц', 'a', 's', 'd', 'ф', 'і', 'в'):
+                print('Не ходіть туди, там живуть дракони')
+            else:
+                print('Ну то не серйозно, напишіть правильний напрямок')
             wrong_move = False
 
         display_map(game_map)
@@ -1246,8 +1335,7 @@ def run_game_loop(state:dict) -> dict:
                     break
 
         if player['hp'] <= 0:
-            print('"Ви програли."')
-            sys.exit(0)
+            sys.exit(f'{RED}На жаль, УКУ назавжди стало частиною Арілонгу, як і ви')
 
 
 def main() -> None:
@@ -1256,15 +1344,25 @@ def main() -> None:
     Initializes the game state and starts the main game loop.
     """
 
-    initial_game_map = create_game_map(5, 5)
+    initial_game_map = create_game_map(7, 7)
 
     initial_player = create_player()
-    initial_boss = create_boss("Goblin_boss", hp=20, mp=20, defense=1, strength=1,
-                                mag_str=0, spell_book={})
+    initial_boss = create_boss("Розлючений немертвий", hp=200, mp=300, defense=1, strength=1,
+                                mag_str=3, spell_book={"Вогняна куля": 20,
+                                                       "Блискавка": 100,
+                                                       "Бурління лави": 50})
 
     initial_enemies = [
-        create_enemy("Goblin", hp=20, mp=20, defense=1, strength=1, mag_strength=0,
-                    spell_book={'Fireball': 20}, location=(0, 0))
+        create_enemy("Бронелом Костян", hp=35, mp=0, defense=2, strength=3, mag_strength=0,
+                    spell_book={}, location=(0, 0)),
+        create_enemy("Ігніс Попелястий", hp=15, mp=40, defense=0.5, strength=1, mag_strength=4,
+                    spell_book={'Вогняна куля': 20}, location=(0, 0)),
+        create_enemy("Соціус Лінивий", hp=1, mp=1, defense=0.1, strength=0, mag_strength=0,
+                    spell_book={}, location=(0, 0)),
+        create_enemy("Лицар Порчі", hp=100, mp=50, defense=2, strength=4, mag_strength=1,
+                    spell_book={'Порча': 20}, location=(0, 0)),
+        create_enemy("Cпустошений студент", hp=20, mp=20, defense=0.5, strength=1, mag_strength=1,
+                    spell_book={'Депресія': 20}, location=(0, 0)),
     ]
 
     initial_town = create_town(initial_game_map['town_location'])

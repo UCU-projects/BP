@@ -4,15 +4,26 @@ Translate done
 Debug: movement doesn't corrects itself done
        exit messages don't show done
        town disappears after visitng deeper functions done 
-       dungeon deeeper func doesn't work 
+       dungeon deeeper func doesn't work  done
        second choice doesn't work at menu done
-       text appearance 
+       text appearance done
+       enemy rounding error done
+       inventory empty doesn't appear correctly done
+       dungeon escape doesnt work correctly done
+       
 Screen cleaning done
 Change inputs done
 Fight system more randomness done
-Quest book 
+Quest book deny
 How to play done
-Store 
+Store done
 Make random attack for enemies without lambda done
 QoL:
-       Movement can be done with cyrillic
+       Movement can be done with cyrillic done
+       bartender don't end conversation after one interaction done
+       in battle clean_screen done
+       battle automatically don't end with death of enemy done
+       Universal shop catalog done
+       color done
+Balance:
+       bartenader buffs only up to 4 done
