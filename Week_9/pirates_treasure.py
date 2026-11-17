@@ -325,10 +325,10 @@ def decode_map(file_name1:str, file_name2:str, map_file_name:str) -> None:
 
     # Creating list for points and finding max of them
     all_points = path1 + path2
-    min_x = min(0, min(p[0] for p in all_points))
-    max_x = max(0, max(p[0] for p in all_points))
-    min_y = min(0, min(p[1] for p in all_points))
-    max_y = max(0, max(p[1] for p in all_points))
+    min_x = min(0, *[p[0] for p in all_points])
+    max_x = max(0, *[p[0] for p in all_points])
+    min_y = min(0, *[p[1] for p in all_points])
+    max_y = max(0, *[p[1] for p in all_points])
 
     path1 = set(path1)
     path2 = set(path2)
